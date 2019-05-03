@@ -7,9 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 class Story extends Model
 {
     protected $fillable = [
-        'title', 'body', 'category_id', 'age_from', 'age_to', 'author', 'image_url', 'image_name',
-        'story_duration', 'user_id', 'is_premium'
+        'title', 'body', 'category_id', 'age_from', 'age_to', 'author', 
+        'image_url', 'image_name', 'user_id', 'is_premium'
     ];
+
+    //Accessors
+    public function getAgeAttribute()
+    {
+        return ucwords($this->age_from . '-' . $this->age_to);
+    }
+
+    public function getreadingTimeAttribute($text) {
+        $wordsPerMinute = 200;
+        $numberOfWords =  count(explode(' ', $this->body));
+        $minutes = $numberOfWords / $wordsPerMinute;
+        $readTime = ceil($minutes);
+
+        return  $minutes > 1 ? "$readTime minutes read" : "$readTime minute read";
+    }
+    // Accessors end
 
     //Relationship start
 

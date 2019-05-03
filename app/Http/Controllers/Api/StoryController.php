@@ -4,21 +4,23 @@ namespace App\Http\Controllers\Api;
 
 use Auth;
 use DB;
-use Validator;
+use App\User;
 use App\Story;
+use App\Comment;
+use Validator;
 use App\Category;
 use App\Reaction;
 use Illuminate\Http\Request;
+use App\Traits\Api\UserTrait;
 use App\Services\FileUploadService;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StoryResource;
-use App\User;
-use App\Traits\UserTrait;
 use Symfony\Component\HttpFoundation\Response;
 
 class StoryController extends Controller
 {
     use UserTrait;
+
     public function __construct(FileUploadService $fileUploadService)
     {
         $this->fileUploadService = $fileUploadService;
@@ -31,18 +33,25 @@ class StoryController extends Controller
      */
     public function index(Request $request)
     {
-        $filter = $request->has("age")? explode( '-',$request->age):[1,5];
-        $stories =  StoryResource::collection(Story::where(function($q) use ($filter){
-                foreach($filter as $fil){
-                    $q->orWhereRaw('? between age_from and age_to ', [$fil]);
+        $stories = Story::query();
+
+        $stories = $stories->when($request->has('age'), function ($q) use ($request) {
+            $age = explode('-', $request->age);
+
+            return $q->where(function ($q) use ($age){
+                foreach ($age as $data) {
+                    $q->orWhereRaw('? between age_from and age_to ', [$data]);
                 }
-        })->get());
+            });
+        });
+
+        $stories = $stories->get();
 
         return response()->json([
             'status' => 'success',
             'code' => 200,
             'message' => 'OK',
-            'data' => $stories
+            'data' => StoryResource::collection($stories)
         ], 200);
     }
 
@@ -61,7 +70,6 @@ class StoryController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
             'age' => 'required',
             'author' => 'required',
-            'story_duration' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -89,7 +97,9 @@ class StoryController extends Controller
         if ($request->hasfile('photo')) {
             $image = $this->fileUploadService->uploadFile($request->file('photo'));
         }
-        $age = explode('-',$request->age);
+
+        $age = explode('-', $request->age);
+
         $story = Story::create([
             'title' => $request->title,
             'body' => $request->body,
@@ -97,8 +107,8 @@ class StoryController extends Controller
             'user_id' => auth()->id(),
             'age_from' => $age[0] ,
             'age_to' => $age[1] ,
+            'is_premium' => $request->is_premium,
             'author' => $request->author,
-            'story_duration' => $request->story_duration,
             "image_url" => $image['secure_url'] ?? null,
             "image_name" => $image['public_id'] ?? null
         ]);
@@ -109,7 +119,7 @@ class StoryController extends Controller
             'status' => 'success',
             'code' => 200,
             'message' => 'OK',
-            'data' => $story,
+            'data' => new StoryResource($story),
         ], 200);
     }
 
@@ -121,38 +131,41 @@ class StoryController extends Controller
      */
     public function show($id)
     {
-        $story = new StoryResource(Story::find($id));
+        $story = Story::where('id', $id)
+                        ->with(['comments.user:id,first_name,last_name,image_url'])
+                        ->firstOrFail();
 
-        if($story->is_premium){
-           if(request()->user('api')){
-              if( $this->userIsPremuim()){
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'premium story',
-                    'data' => $story
-                ], Response::HTTP_OK);
-              }else {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Premium story',
-                    'data' => null
-                ], Response::HTTP_FORBIDDEN);
-              }
+        if ($story->is_premium) {
+            if (request()->user('api')) {
+                if ($this->userIsPremuim()) {
+                    return response()->json([
+                        'status' => 'success',
+                        "code" => Response::HTTP_OK,
+                        'message' => 'premium story',
+                        'data' => $story,
+                        
+                    ], Response::HTTP_OK);
+                }else {
+                    return response()->json([
+                        'error' => 'Forbidden',
+                        'code' => Response::HTTP_FORBIDDEN,
+                        'message' => 'This is a Premium story'
+                    ], Response::HTTP_FORBIDDEN);
+                }
+            }
 
-           }
             return response()->json([
-                'status' => 'error',
-                'message' => 'No authorization',
-                'data' => null
+                'error' => 'Unauthorized',
+                'code' => Response::HTTP_UNAUTHORIZED,
+                'message' => 'You are not authorized'
             ], Response::HTTP_UNAUTHORIZED);
-
         }
-
-
 
         return response()->json([
             'status' => 'success',
-            'data' => $story
+            "code" => Response::HTTP_OK,
+            "message" => "OK",
+            'data' => $story,
         ], 200);
     }
 
@@ -172,7 +185,6 @@ class StoryController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
             'age' => 'required',
             'author' => 'required',
-            'story_duration' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -222,7 +234,6 @@ class StoryController extends Controller
             'user_id' => auth()->id(),
             'age' => $request->age,
             'author' => $request->author,
-            'story_duration' => $request->story_duration,
             "image_url" => $image['secure_url'] ?? $story->image_url,
             "image_name" => $image['public_id'] ?? $story->image_name
         ]);
