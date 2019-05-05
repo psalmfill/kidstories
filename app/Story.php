@@ -11,10 +11,23 @@ class Story extends Model
         'image_url', 'image_name', 'user_id', 'is_premium'
     ];
 
+    // FIXME: Please, don't uncomment. Understand what you are about to do first.
+    // protected $appends = ['like','dislike'];
+
     //Accessors
     public function getAgeAttribute()
     {
         return ucwords($this->age_from . '-' . $this->age_to);
+    }
+
+    public function getLikesAttribute()
+    {
+        return $this->reactions()->where('reaction',1)->count();
+    }
+
+    public function getDislikesAttribute()
+    {
+        return $this->reactions()->where('reaction',0)->count();
     }
 
     public function getreadingTimeAttribute($text) {
@@ -25,8 +38,13 @@ class Story extends Model
 
         return  $minutes > 1 ? "$readTime minutes read" : "$readTime minute read";
     }
+
+    public function getSubscriptionAttribute(){
+        return $this->is_premium == 1?'Premium':'Regular';
+    }
     // Accessors end
 
+    
     //Relationship start
 
     /*
@@ -75,4 +93,11 @@ class Story extends Model
     {
         return $this->belongsToMany(Tag::class);
     }
+
+    public function scopeSimilar($query)
+    {
+        return $query->where('category_id',$this->category_id)->take(4);
+    }
+
+
 }

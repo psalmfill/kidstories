@@ -1,81 +1,127 @@
 @extends('layouts.app')
 @section('custom_css')
-    <link href="{{ asset('css/singlestory.css') }}" rel="stylesheet" type="text/css" >
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" 
-        integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" 
-        crossorigin="anonymous">
+<link href="{{ asset('css/storieslisting.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ asset('css/singlestory.css') }}" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 @endsection
 @section('content')
-<div class="banner">
-    <img class="banner-image" src="https://res.cloudinary.com/solape/image/upload/v1556431411/Screen_Shot_2019-04-28_at_7.03.06_AM.png" alt="banner">
- </div>
 
- <div id="main">
+<div class="p-0 col-md-12">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb arr-right ">
+            <li class="breadcrumb-item"><a href="{{ route('homepage') }}">Home</a></li>
+            <li class="breadcrumb-item titlecase active"><a href="{{route('story.show',$story->id)}}"> {{$story->title}} </a></li>
+        </ol>
+    </nav>
+</div>
 
- </div>
+    <div class="content">
 
- <h1>The Legend Of The Dragon That Fell From The Sky</h1>
+        <!-- Content begins -->
+        <span class="content1 topic">
+            <h1 class="titlecase"> {{$story->title}} </h1>
+            <h3 class="titlecase"> By: {{$story->author}} </h3>
+        </span>
 
- <div class="sections">
-    <h2>What is Lorem Ipsum?</h2>
-    <p> Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
- </div>
+        <!-- Story section -->
+        <div class="content1">
+            <!-- Bookmark story -->
+            <div class="subContent">
+                <div class="subcontent-icon">
+                    <a>
+                        <i class="fa fa-bookmark stBookmark"></i>
+                    </a>
+                </div> <!-- Bookmark story ends -->
 
- <div class=image>
-    <img src="https://res.cloudinary.com/solape/image/upload/v1556481719/dragon.svg">
-    <p> Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32. </p>
-    <p> The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham. </p>
+                <!-- Stories -->
+                <img class="stories" src="{{$story->image_url}}" >             
+                <p>{{$story->body}} </p>
+            </div>
 
- </div>
- <div class="tags">
-    <div> <button type="submit" id="submit"> dragon </button> <button type="submit" id="submit"> history </button> <button type="submit" id="submit"> dragon </button> <button type="submit" id="submit"> history </button></div>
-    <div> <i class="fa fa-thumbs-down"> <span> 445 </span></i>
-          <i class="fa fa-thumbs-up"> <span> 445 </span></i>
-    </div>
+            <h1 class="end"> THE END </h1>
+            <!-- Story section ends -->
 
- </div>
+            <!-- Tags -->
+            <div class="tags">
+                <div>
+                    @foreach ($story->tags as $tag)
+                        <button class="" type="submit" id="submit"> {{$tag->name}} </button>
+                     @endforeach
+                    <i class="fa fa-thumbs-down thumbs"><span> {{$story->likes}} </span></i>
+                    <i class="fa fa-thumbs-up thumbs"><span> {{$story->dislikes}} </span></i>
+                </div>
+            </div>
+            <!-- Tags ends -->
+            <hr>
+            <h1> Stories You Might Like </h1>
+            <!-- Cards section -->
+            <div class="stories">
+                <div class="row">
+                    @foreach ($similarStories as $similarStory)
+                       <div class="col-md-3">
+                            <div class="card story_card mt-4">
+                                <img src="{{$similarStory->image_url}}" 
+                                    class="card-img-top cards" alt="story image">
+                                <div class="card-body">
+                                    <h5 class="card-title" style="font-size:1rem">
+                                        {{str_limit($similarStory->title,22)}}
+                                    </h5>
+                                    <p class="card-text mb-1">by 
+                                        <span class="author">
+                                            {{$similarStory->author}}
+                                        </span>
+                                    </p>
+                                    <hr>
+                                    <p class="card-text">For kids {{$similarStory->age}} years</p>
+                                </div>
+                                <div class="card-footer d-flex justify-content-between">
+                                    <div class="reactions">
+                                        <a class="like" href="#">
+                                            <i class="fa fa-thumbs-up mr-2"></i>
+                                            <small class="mr-3"> {{$similarStory->likes}} </small>
+                                        </a>
+                                        <a class="dislike" href="#">
+                                            <i class="fa fa-thumbs-down mr-2"></i>
+                                            <small> {{$similarStory->dislikes}} </small>
+                                        </a>
+                                    </div>
+                                    <div class="bookmark">
+                                        <a>
+                                            <i class="fa fa-bookmark"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> 
+                    @endforeach
+                </div>                                       
+            </div>    
+        </div> 
+    </div> 
+     <!-- App Section -->
+    <section class="main-banner">
+        <div class="container2">
+            <div class="row c">
+                <!--Image Column-->
+                <div class="col-lg-4 col-md-12 col-sm-12 ">
+                    <img src="/images/resources/bottom2.jpg" alt=""  />
+                </div>
 
+                <!--Content Column-->
+                <div class="content-column col-lg-8 col-md-12 col-sm-12">
+                    <div class="applink">
+                        <h4>Get up close with your child</h4>
+                        <div class="text">The Kids Stories app is your go to app for free bedtime stories, fairy tales, poems and short stories for kids. Get in there and start reading!
+                        </div>
+                        <div class="buttons-box">
+                            <a href="#" class="theme-btn wow slideInLeft" data-wow-delay="0ms" data-wow-duration="1500ms"><img src="/images/icons/apple.png" alt="" /></a>
+                            <a href="#" class="theme-btn wow slideInRight" data-wow-delay="0ms" data-wow-duration="1500ms"><img src="/images/icons/playstore.png" alt="" /></a>
+                        </div>
+                    </div>
+                </div>
 
-
-
-
- <hr>
- <h2 class="h20"> Stories You Might Like </h2>
- <div id="stories">
-
-     <div class="stories-p">
-         <div> <img src="https://res.cloudinary.com/solape/image/upload/v1556534093/Myth.svg" class="img"></div>
-             <div>
-                 <h2> The Legend of the Dragon that Fell From the Sky</h2>
-                    <p>  The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham. <br><span> <a href="#">Read More... </a> </span>  </p>
-             
-             </div>
-         </div>
-     </div>
- </div>
-     <div id="stories">
-
-     <div class="stories-p">
-         <div> <img src="https://res.cloudinary.com/solape/image/upload/v1556534093/Myth.svg" class="img"></div>
-             <div>
-                 <h2> The Legend of the Dragon that Fell From the Sky</h2>
-                    <p>  The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham. <br> <span> <a href="#">Read More... </a> </span> </p>
-         
-             </div>
-         </div>
-     </div>
- </div>
- <div id="stories">
-
-         <div class="stories-p">
-             <div> <img src="https://res.cloudinary.com/solape/image/upload/v1556534093/Myth.svg" class="img"></div>
-                 <div>
-                     <h2> The Legend of the Dragon that Fell From the Sky</h2>
-                        <p>  The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham. <br><span> <a href="#">Read More... </a> </span>  </p>
-                 
-                 </div>
-             </div>
-         </div>
-     </div>
-
+            </div>
+        </div>
+    </section> 
+    <!-- App sections ends -->
 @endsection
